@@ -1,6 +1,7 @@
 import streamlit as st
-from modules.customer_ops import *
+from modules.customer_ops import add_customer, delete_customer, update_customer, search_customers, list_customers, add_transaction, get_transactions
 import os
+from datetime import datetime
 
 FILE_PATH = "data/customers.json"
 os.makedirs("data", exist_ok=True)
@@ -10,7 +11,7 @@ st.set_page_config(page_title="Quản lý Khách hàng Vinmart", layout="centere
 st.title("🏪 Hệ thống Quản lý Khách hàng Vinmart")
 
 menu = st.sidebar.radio("📋 Chọn chức năng", 
-    ["Thêm khách hàng", "Xoá khách hàng", "Cập nhật", "Tìm kiếm", "Xem danh sách"])
+    ["Thêm khách hàng", "Xoá khách hàng", "Cập nhật", "Tìm kiếm", "Xem danh sách", "Quản lý giao dịch"])
 
 # Thêm khách hàng
 if menu == "Thêm khách hàng":
@@ -23,7 +24,7 @@ if menu == "Thêm khách hàng":
     if st.button("Thêm"):
         if id_ and name:
             add_customer(FILE_PATH, {
-                "id": id_, "name": name, "phone": phone, "email": email, "address": address
+                "id": id_, "name": name, "phone": phone, "email": email, "address": address, "transactions": []
             })
             st.success("✅ Thêm thành công!")
         else:
@@ -71,6 +72,39 @@ elif menu == "Tìm kiếm":
             st.table(results)
         else:
             st.warning("❌ Không tìm thấy khách hàng nào.")
+
+# Quản lý giao dịch
+elif menu == "Quản lý giao dịch":
+    st.subheader("💼 Quản lý giao dịch")
+    all_customers = list_customers(FILE_PATH)
+    ids = [c["id"] for c in all_customers]
+    selected_id = st.selectbox("Chọn mã KH", ids)
+    
+    # Hiển thị danh sách giao dịch
+    transactions = get_transactions(FILE_PATH, selected_id)
+    if transactions:
+        st.write(f"Danh sách giao dịch của KH {selected_id}:")
+        for idx, trans in enumerate(transactions, 1):
+            st.write(f"{idx}. Ngày: {trans['date']}, Số tiền: {trans['amount']} VNĐ, Mô tả: {trans['description']}")
+    else:
+        st.info("📭 Chưa có giao dịch nào.")
+    
+    # Thêm giao dịch mới
+    st.subheader("Thêm giao dịch mới")
+    trans_date = st.date_input("Ngày giao dịch", value=datetime.today())
+    trans_amount = st.number_input("Số tiền (VNĐ)", min_value=0, step=1000)
+    trans_desc = st.text_input("Mô tả giao dịch")
+    if st.button("Thêm giao dịch"):
+        if trans_amount > 0 and trans_desc:
+            transaction = {
+                "date": trans_date.strftime("%Y-%m-%d"),
+                "amount": trans_amount,
+                "description": trans_desc
+            }
+            add_transaction(FILE_PATH, selected_id, transaction)
+            st.success(f"✅ Đã thêm giao dịch cho KH {selected_id}!")
+        else:
+            st.warning("⚠️ Vui lòng nhập số tiền và mô tả!")
 
 # Danh sách
 elif menu == "Xem danh sách":

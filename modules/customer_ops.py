@@ -24,3 +24,21 @@ def search_customers(file_path, keyword):
 
 def list_customers(file_path):
     return read_customers(file_path)
+
+def add_transaction(file_path, customer_id, transaction):
+    """Thêm giao dịch mới cho khách hàng và cộng điểm nếu giao dịch ≥ 100,000."""
+    data = read_customers(file_path)
+    for customer in data:
+        if customer["id"] == customer_id:
+            customer["transactions"].append(transaction)
+            if transaction.get("amount", 0) >= 100000:
+                customer["points"] = customer.get("points", 0) + 1
+            break
+    write_customers(file_path, data)
+
+def get_transactions(file_path, customer_id):
+    data = read_customers(file_path)
+    for customer in data:
+        if customer["id"] == customer_id:
+            return customer.get("transactions", [])
+    return []
